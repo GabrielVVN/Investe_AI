@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card green form-container" id="invest-form">
+    <h2>Lançar Novo Aporte Real</h2>
+    <p>Registre aqui o dinheiro que você investiu para acompanhar no seu Dashboard.</p>
+    
+    <form method="POST" action="{{ url_for('investir') }}" class="mt-2">
+        <div class="form-group">
+            <label for="categoria">Categoria do Investimento</label>
+            <select id="categoria" name="categoria" required>
+                <option value="Renda Fixa">CDB / Tesouro Direto (Renda Fixa)</option>
+                <option value="FIIs">Fundos Imobiliários (FIIs)</option>
+                <option value="Ações">Ações</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="ativo">Nome do Ativo (ex: PETR4, MXRF11)</label>
+            <input type="text" id="ativo" name="ativo" placeholder="Ex: MXRF11, Tesouro Selic 2029" required>
+        </div>
+
+        <div class="form-group">
+            <label for="valor">Valor Investido (R$)</label>
+            <input type="number" id="valor" name="valor" step="0.01" min="1" placeholder="Ex: 150.00" required>
+        </div>
+
+        <button type="submit" class="btn btn-secondary btn-block btn-principal">Salvar Investimento</button>
+    </form>
+</div>
+{% endblock %}

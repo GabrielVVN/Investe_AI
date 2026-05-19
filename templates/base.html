@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investe Aí - Seu Rastreador Premium</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+
+    {% if request.endpoint not in ['login', 'cadastro'] %}
+    <nav>
+        <a href="{{ url_for('index') }}" class="brand">
+            <span class="logo-icon">📈</span> Investe Aí
+        </a>
+        <div class="nav-links">
+            {% if session.username %}
+                <a href="{{ url_for('index') }}" class="nav-item">Dashboard</a>
+                <a href="{{ url_for('investir') }}" class="nav-item badge-link">+ Novo Aporte</a>
+                <a href="{{ url_for('simulador') }}" class="nav-item">Simulador</a>
+                <a href="{{ url_for('aprender') }}" class="nav-item">Aprender</a>
+                <a href="{{ url_for('perfil') }}" class="nav-item">⚙️ Perfil</a>
+                <a href="{{ url_for('logout') }}" class="btn-logout">Sair</a>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="btn-outline">Entrar</a>
+                <a href="{{ url_for('cadastro') }}" class="btn-solid">Criar Conta</a>
+            {% endif %}
+        </div>
+    </nav>
+    {% endif %}
+
+    <div class="container {% if request.endpoint in ['login', 'cadastro'] %}center-container{% endif %}">
+        
+        {% if request.endpoint not in ['login', 'cadastro'] %}
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="alert-container">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}" style="padding: 1rem; margin-bottom: 1rem; border-radius: 8px; font-weight: bold; text-align: center; background: rgba(255,255,255,0.8);">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card dashboard-balance" id="main-balance-card">
+    <h2>O Seu Património Real</h2>
+    <div class="valor-total">R$ {{ "%.2f"|format(saldo_atual) }}</div>
+    <div class="text-center mt-2">
+        <a href="{{ url_for('investir') }}" class="btn-secondary" style="display: inline-block; width: auto; padding: 0.6rem 1.5rem; text-decoration: none;">+ Adicionar Investimento</a>
+    </div>
+</div>
+
+<div class="alert alert-{{ status }}" style="padding: 1.2rem; margin: 2rem 0; border-radius: 16px; font-weight: 600; background: rgba(255,255,255,0.8); border: 1px solid rgba(0,0,0,0.05); color: var(--text-main); line-height: 1.5;">
+    <h5 style="margin: 0 0 0.4rem 0; font-weight: 800; display: flex; align-items: center; gap: 0.5rem;">
+        {% if status == 'success' %}🟢{% else %}🟡{% endif %} Coach Financeiro
+    </h5>
+    <p style="margin: 0; color: var(--text-main); opacity: 0.9;">{{ msg_coach }}</p>
+</div>
+
+<div class="card" style="margin-bottom: 2rem; padding: 2rem;">
+    <h3 style="margin-bottom: 1rem;">Progresso da Meta</h3>
+    <div style="background: #E2E8F0; border-radius: 50px; height: 24px; width: 100%; overflow: hidden; position: relative;">
+        <div style="background: linear-gradient(90deg, var(--secondary) 0%, #05CD99 100%); width: {{ progresso_percentual }}%; height: 100%; transition: width 1s ease-in-out;"></div>
+    </div>
+    <div style="display: flex; justify-content: space-between; margin-top: 0.8rem; font-weight: 700; font-size: 0.9rem; align-items: center;">
+        <span style="color: var(--secondary);">{{ "%.1f"|format(progresso_percentual) }}% Concluído</span>
+        
+        <div style="display: flex; align-items: center;">
+            <span style="color: var(--text-muted);">Meta: R$ {{ "%.2f"|format(config.meta) }}</span>
+            <a href="{{ url_for('perfil') }}" class="btn-edit-meta">Editar ⚙️</a>
+        </div>
+    </div>
+</div>
+
+{% if saldo_atual > 0 %}
+<div class="cards-grid" id="cards-grid">
+    <div class="card">
+        <h3>Distribuição da Carteira</h3>
+        <div class="chart-container mt-2" style="position: relative; margin: auto; height: 250px; width: 250px;">
+            <canvas id="patrimonioChart"></canvas>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Os Meus Ativos</h3>
+        <ul class="distribuicao-lista mt-2" id="assets-list">
+            {% for aporte in aportes %}
+            <li>
+                <div>
+                    <strong>{{ aporte.categoria }}</strong>
+                    {% if aporte.ativo %}
+                        <small style="color: var(--primary); font-weight: 700;">({{ aporte.ativo }})</small>
+                    {% endif %}
+                    <small style="display: block; color: var(--text-muted); margin-top: 0.2rem;">{{ aporte.data.strftime('%d/%m/%Y') }}</small>
+                </div>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <span style="font-weight: 800; color: var(--text-main);">R$ {{ "%.2f"|format(aporte.valor) }}</span>
+                    
+                    <form action="{{ url_for('deletar_aporte', id=aporte.id) }}" method="POST" style="margin: 0;">
+                        <button type="submit" class="btn-delete" title="Apagar aporte">✕</button>
+                    </form>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<script>
+    const ctx = document.getElementById('patrimonioChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Ações', 'FIIs', 'Renda Fixa', 'Cripto'],
+            datasets: [{
+                data: [
+                    {{ distribuicao.get('Ações', 0) }},
+                    {{ distribuicao.get('FIIs', 0) }},
+                    {{ distribuicao.get('Renda Fixa', 0) }},
+                    {{ distribuicao.get('Cripto', 0) }}
+                ],
+                backgroundColor: ['#fab005', '#4c6ef5', '#20c997', '#7048e8'],
+                borderWidth: 0, 
+                hoverOffset: 12
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { 
+                legend: { position: 'bottom' } 
+            },
+            animation: { duration: 1200 }
+        }
+    });
+</script>
+
+{% else %}
+<div class="card text-center mt-2" style="padding: 3rem;">
+    <p style="font-size: 1.2rem; font-weight: 700; color: var(--text-main);">A sua carteira está vazia</p>
+    <div style="font-size: 4rem; margin: 1rem 0; opacity: 0.3;">💼</div>
+    <p style="color: var(--text-muted);">Registe os seus ativos clicando no botão acima para ativar a monitorização e o gráfico de alocação.</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card dashboard-balance" style="margin-bottom: 2rem;">
+    <h2>Resultado da Simulação</h2>
+    <p style="color: rgba(255, 255, 255, 0.8); font-size: 1.1rem;">Perfil Selecionado: <strong>{{ sim.perfil }}</strong></p>
+    <div class="valor-total">R$ {{ "%.2f"|format(sim.valor_investido) }}</div>
+</div>
+
+<div class="cards-grid">
+    <div class="card">
+        <h3>Sugestão de Alocação</h3>
+        <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 1rem;">Distribuição ideal para o seu perfil.</p>
+        
+        <div class="chart-container" style="position: relative; margin: auto; height: 250px; width: 250px;">
+            <canvas id="simulacaoChart"></canvas>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Valores Recomendados</h3>
+        <ul class="distribuicao-lista mt-2">
+            {% for ativo, valor in sim.valores_reais.items() %}
+            <li>
+                <div>
+                    <strong>{{ ativo }}</strong>
+                    <small style="display: block; color: var(--text-muted); margin-top: 0.2rem;">
+                        {{ (sim.distribuicao_percentual[ativo] * 100)|int }}% da carteira
+                    </small>
+                </div>
+                <span style="font-weight: 800; color: var(--text-main);">R$ {{ "%.2f"|format(valor) }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        
+        <div class="text-center mt-2" style="padding-top: 1rem;">
+             <a href="{{ url_for('simulador') }}" class="btn-outline" style="display: block; width: 100%;">Fazer Nova Simulação</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ctx = document.getElementById('simulacaoChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Renda Fixa', 'FIIs', 'Ações'],
+            datasets: [{
+                data: [
+                    {{ sim.valores_reais.get('Renda Fixa', 0) }},
+                    {{ sim.valores_reais.get('FIIs', 0) }},
+                    {{ sim.valores_reais.get('Ações', 0) }}
+                ],
+                backgroundColor: ['#20c997', '#4c6ef5', '#fab005'],
+                borderWidth: 0, 
+                hoverOffset: 12
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false, /* Isso impede que o gráfico cresça infinitamente */
+            plugins: { 
+                legend: { position: 'bottom' } 
+            },
+            animation: { duration: 1200 }
+        }
+    });
+</script>
+{% endblock %}

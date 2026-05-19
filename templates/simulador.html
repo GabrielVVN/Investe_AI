@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card blue form-container" id="invest-form">
+    <h2>Simulador de Carteira Ideal</h2>
+    <p>Planeje seu futuro com base no seu perfil de risco.</p>
+    
+    <form method="POST" action="{{ url_for('simulador') }}" class="mt-2">
+        <div class="form-group">
+            <label for="valor">Valor para simular (R$)</label>
+            <input type="number" id="valor" name="valor" step="0.01" min="10" placeholder="Ex: 5000.00" required>
+        </div>
+
+        <div class="form-group">
+            <label for="perfil">Qual seu perfil?</label>
+            <select id="perfil" name="perfil" required>
+                <option value="Conservador">Conservador (Foco em Segurança)</option>
+                <option value="Moderado">Moderado (Equilíbrio)</option>
+                <option value="Agressivo">Agressivo (Crescimento)</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-principal">Calcular Carteira</button>
+    </form>
+</div>
+{% endblock %}

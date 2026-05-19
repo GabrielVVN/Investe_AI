@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card blue auth-container">
+    <h2 class="text-center">Criar Conta ✨</h2>
+    <p class="text-center">Junte-se ao Investe Aí e comece a rastrear seu patrimônio.</p>
+    
+    <form method="POST" action="{{ url_for('cadastro') }}" class="mt-2">
+        <div class="form-group">
+            <label for="nome">Nome Completo</label>
+            <input type="text" id="nome" name="nome" required placeholder="Ex: João Silva">
+        </div>
+
+        <div class="form-group">
+            <label for="username">Nome de Usuário</label>
+            <input type="text" id="username" name="username" required placeholder="Ex: joaosilva">
+        </div>
+
+        <div class="form-group">
+            <label for="senha">Senha</label>
+            <input type="password" id="senha" name="senha" required placeholder="Crie uma senha forte">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-principal">Criar Minha Conta</button>
+    </form>
+    
+    <div class="text-center mt-2">
+        <p>Já tem uma conta? <a href="{{ url_for('login') }}" style="color: var(--primary-color); font-weight: 700; text-decoration: none;">Faça Login</a></p>
+    </div>
+</div>
+{% endblock %}

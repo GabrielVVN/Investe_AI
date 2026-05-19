@@ -1,0 +1,23 @@
+[
+    {
+        "username": "Gabz",
+        "data": "25/03/2026",
+        "categoria": "FIIs",
+        "ativo": "MXRF11",
+        "valor": 20.0
+    },
+    {
+        "username": "Gabz",
+        "data": "19/05/2026",
+        "categoria": "Ações",
+        "ativo": "MXRF11",
+        "valor": 350.0
+    },
+    {
+        "username": "Gabz",
+        "data": "19/05/2026",
+        "categoria": "FIIs",
+        "ativo": "TESTE",
+        "valor": 400.0
+    }
+]

@@ -1,0 +1,50 @@
+[
+    {
+        "username": "Gabz",
+        "data": "25/03/2026 13:38:38",
+        "valor_investido": 5000.0,
+        "perfil": "Moderado",
+        "distribuicao_percentual": {
+            "Renda Fixa": 0.4,
+            "FIIs": 0.3,
+            "Ações": 0.3
+        },
+        "valores_reais": {
+            "Renda Fixa": 2000.0,
+            "FIIs": 1500.0,
+            "Ações": 1500.0
+        }
+    },
+    {
+        "username": "Gabz",
+        "data": "25/03/2026 13:38:53",
+        "valor_investido": 10000.0,
+        "perfil": "Agressivo",
+        "distribuicao_percentual": {
+            "Renda Fixa": 0.2,
+            "FIIs": 0.3,
+            "Ações": 0.5
+        },
+        "valores_reais": {
+            "Renda Fixa": 2000.0,
+            "FIIs": 3000.0,
+            "Ações": 5000.0
+        }
+    },
+    {
+        "username": "Gabz",
+        "data": "19/05/2026 16:20:37",
+        "valor_investido": 55555.0,
+        "perfil": "Conservador",
+        "distribuicao_percentual": {
+            "Renda Fixa": 0.6,
+            "FIIs": 0.25,
+            "Ações": 0.15
+        },
+        "valores_reais": {
+            "Renda Fixa": 33333.0,
+            "FIIs": 13888.75,
+            "Ações": 8333.25
+        }
+    }
+]

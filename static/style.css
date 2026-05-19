@@ -1,0 +1,317 @@
+/* static/style.css */
+
+:root {
+    /* Paleta Premium Fintech - Modo Tranquilo 🍃 */
+    --bg-gradient-1: #eef2fa;
+    --bg-gradient-2: #e0e8f9;
+    
+    --primary: #82A4F8; 
+    --primary-hover: #6C91E8;
+    
+    --secondary: #05CD99;
+    --secondary-hover: #04a57b;
+    
+    --text-main: #2B3674;
+    --text-muted: #8F9BBA;
+    --white: #ffffff;
+    --input-bg: rgba(255, 255, 255, 0.9);
+    
+    /* Sombras e Bordas Vidro */
+    --glass-bg: rgba(255, 255, 255, 0.75);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.5);
+    --shadow-soft: 0 18px 40px rgba(112, 144, 176, 0.08);
+    --shadow-hover: 0 20px 50px rgba(112, 144, 176, 0.15);
+    --radius-lg: 24px;
+    --radius-md: 16px;
+}
+
+* {
+    margin: 0; padding: 0; box-sizing: border-box;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+body {
+    background-color: #f4f7fe;
+    background-image: radial-gradient(at 0% 0%, hsla(253,16%,7%,0.02) 0, transparent 50%), 
+                      radial-gradient(at 50% 0%, hsla(225,39%,30%,0.02) 0, transparent 50%), 
+                      radial-gradient(at 100% 0%, hsla(339,49%,30%,0.02) 0, transparent 50%);
+    color: var(--text-main);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* --- BLOBS ANIMADOS DE FUNDO --- */
+.blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    z-index: -1;
+    opacity: 0.5;
+}
+.blob-1 { top: -10%; left: -10%; width: 500px; height: 500px; background: #e0e8f9; }
+.blob-2 { bottom: -10%; right: -5%; width: 600px; height: 600px; background: #eef2fa; }
+.blob-3 { top: 40%; left: 50%; width: 400px; height: 400px; background: #dce5fa; transform: translate(-50%, -50%); }
+
+/* --- NAVBAR PREMIUM --- */
+nav {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: var(--glass-border);
+    padding: 1rem 4rem;
+    display: flex; justify-content: space-between; align-items: center;
+    position: sticky; top: 0; z-index: 1000;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+}
+
+.brand {
+    font-size: 1.8rem; font-weight: 800; color: var(--text-main);
+    text-decoration: none; display: flex; align-items: center; gap: 0.5rem;
+}
+
+.nav-links { display: flex; gap: 2rem; align-items: center; }
+.nav-item {
+    color: var(--text-muted); text-decoration: none; font-weight: 600;
+    transition: color 0.3s ease;
+}
+.nav-item:hover { color: var(--primary); }
+
+/* --- CONTAINERS E GRIDS --- */
+.container {
+    max-width: 1200px; margin: 3rem auto; padding: 0 2rem; flex: 1; z-index: 1;
+}
+.center-container {
+    display: flex; justify-content: center; align-items: center; min-height: 90vh;
+}
+.cards-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; margin-top: 2rem;
+}
+
+/* --- ESTILO DE CARDS (GLASSMORPHISM & HOVER SUAVE) --- */
+.card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem;
+    box-shadow: var(--shadow-soft);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
+}
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover);
+}
+
+/* Card Principal de Saldo */
+.dashboard-balance {
+    background: linear-gradient(135deg, var(--primary) 0%, #AEC2FA 100%);
+    color: var(--white);
+    text-align: center;
+    padding: 3.5rem;
+    border: none;
+}
+.dashboard-balance h2 { color: rgba(255, 255, 255, 0.95); font-weight: 600; font-size: 1.4rem;}
+.valor-total { font-size: 4rem; font-weight: 800; color: var(--white); margin: 1rem 0; letter-spacing: -2px; }
+
+/* Tipografia dentro dos cards */
+.card h2, .card h3 { color: var(--text-main); font-weight: 800; margin-bottom: 0.5rem; }
+.card p { color: var(--text-muted); line-height: 1.6; font-weight: 500; }
+
+/* --- FORMULÁRIOS À PROVA DE BALAS --- */
+.form-group { 
+    margin-bottom: 1.8rem; 
+    text-align: left; 
+}
+
+.form-group label {
+    display: block !important; 
+    font-weight: 800 !important; 
+    color: var(--text-main) !important;
+    margin-bottom: 0.8rem !important; 
+    font-size: 0.95rem !important; 
+}
+
+.form-group input, 
+.form-group select {
+    display: block !important;
+    width: 100% !important; 
+    padding: 1.2rem !important;
+    background-color: #F8FAFC !important;
+    border: 2px solid #E2E8F0 !important;
+    border-radius: var(--radius-md) !important;
+    font-size: 1rem !important; 
+    color: #0F172A !important; 
+    font-weight: 600 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    min-height: 55px !important;
+    transition: all 0.3s ease !important;
+    appearance: auto !important;
+}
+
+.form-group input::placeholder { 
+    color: #94A3B8 !important; 
+    font-weight: 500 !important; 
+}
+
+.form-group input:focus, 
+.form-group select:focus {
+    outline: none !important; 
+    border-color: var(--primary) !important; 
+    background-color: #FFFFFF !important;
+    box-shadow: 0 0 0 4px rgba(130, 164, 248, 0.2) !important;
+}
+
+/* --- BOTÕES PREMIUM (FLUTUAÇÃO SUAVE) --- */
+.btn-solid, .btn-primary, .btn-secondary, .btn-logout {
+    display: inline-block; width: 100%; padding: 1.1rem;
+    border-radius: var(--radius-md); font-size: 1.1rem; font-weight: 700;
+    text-align: center; border: none; cursor: pointer; text-decoration: none;
+    transition: all 0.3s ease;
+}
+.btn-primary { background: var(--primary); color: var(--white); box-shadow: 0 4px 10px rgba(130, 164, 248, 0.15); }
+.btn-primary:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 8px 16px rgba(108, 145, 232, 0.3); }
+
+.btn-secondary { background: var(--secondary); color: var(--white); box-shadow: 0 4px 10px rgba(5, 205, 153, 0.15); }
+.btn-secondary:hover { background: var(--secondary-hover); transform: translateY(-2px); box-shadow: 0 8px 16px rgba(5, 205, 153, 0.3); }
+
+.btn-outline {
+    background: transparent; color: var(--primary); border: 2px solid var(--primary);
+    padding: 0.6rem 1.5rem; border-radius: var(--radius-md); font-weight: 700; text-decoration: none;
+    transition: all 0.3s ease;
+}
+.btn-outline:hover { background: var(--primary); color: var(--white); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(130, 164, 248, 0.2); }
+
+.btn-logout { background: #ffe3e3; color: #d6336c; width: auto; padding: 0.6rem 1.5rem; transition: all 0.3s ease; }
+.btn-logout:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(214, 51, 108, 0.2); }
+
+/* --- BOTÃO DE DELETAR APORTE (Estável) --- */
+.btn-delete {
+    background: #ffe3e3;
+    color: #d6336c;
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+.btn-delete:hover {
+    background: #d6336c;
+    color: var(--white);
+}
+
+/* --- BOTÃO DE EDITAR META --- */
+.btn-edit-meta {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 10px;
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--primary);
+    background: rgba(130, 164, 248, 0.15);
+    border-radius: 12px;
+    text-decoration: none;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+.btn-edit-meta:hover {
+    background: var(--primary);
+    color: var(--white);
+}
+
+/* --- LISTAS DE ATIVOS (Hover Elegante) --- */
+.distribuicao-lista { list-style: none; margin-top: 1.5rem; }
+.distribuicao-lista li {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1.2rem; background: var(--white); border-radius: var(--radius-md);
+    margin-bottom: 1rem; box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+    border: 1px solid #f4f7fe; 
+    transition: all 0.3s ease; 
+}
+.distribuicao-lista li:hover { 
+    border-color: var(--primary); 
+    background-color: #fcfdfe;
+    box-shadow: 0 6px 15px rgba(130, 164, 248, 0.1);
+}
+.distribuicao-lista strong { color: var(--text-main); font-size: 1.1rem; }
+.distribuicao-lista small { color: var(--text-muted); font-weight: 500; }
+.distribuicao-lista span { color: var(--secondary); font-weight: 800; font-size: 1.2rem; }
+
+/* Auxiliares */
+.text-center { text-align: center; }
+.mt-2 { margin-top: 2rem; }
+.auth-container { max-width: 480px; width: 100%; margin: auto; }
+
+/* ==========================================================================
+   DESIGN RESPONSIVO (MOBILE & TABLETS)
+   ========================================================================== */
+@media (max-width: 768px) {
+    nav {
+        flex-direction: column;
+        padding: 1.5rem 1rem;
+        gap: 1.5rem;
+    }
+    
+    .nav-links {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem;
+    }
+    
+    .nav-item {
+        font-size: 0.95rem;
+    }
+
+    .container {
+        padding: 0 1rem;
+        margin: 1.5rem auto;
+    }
+
+    .dashboard-balance {
+        padding: 2rem 1.5rem;
+    }
+    
+    .valor-total {
+        font-size: 2.8rem;
+        letter-spacing: -1px;
+    }
+
+    .cards-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .card {
+        padding: 1.8rem;
+    }
+
+    .distribuicao-lista li {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .distribuicao-lista li > div:last-child {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 380px) {
+    .valor-total {
+        font-size: 2.2rem;
+    }
+    .brand {
+        font-size: 1.5rem;
+    }
+}
