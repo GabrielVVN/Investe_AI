@@ -55,5 +55,86 @@
         {% block content %}{% endblock %}
     </div>
 
+    <script>
+        // Máscara BRL com preservação de caret e tratamento de teclas
+        (function(){
+            function digitsOnly(s){ return String(s||'').replace(/\D/g,''); }
+
+            function formatFromDigits(d){
+                if(!d) return '';
+                if(d.length <= 2) {
+                    d = d.padStart(3,'0');
+                }
+                const cents = d.slice(-2);
+                let intPart = d.slice(0, -2);
+                intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                return intPart + ',' + cents;
+            }
+
+            function setCaretFromDigitCount(el, oldValue, oldPos){
+                const digitsBefore = (oldValue.slice(0, oldPos).match(/\d/g) || []).length;
+                const newValue = el.value || '';
+                if(digitsBefore === 0){ el.selectionStart = el.selectionEnd = 0; return; }
+                let pos = 0, count = 0;
+                while(pos < newValue.length && count < digitsBefore){
+                    if(/\d/.test(newValue[pos])) count++;
+                    pos++;
+                }
+                el.selectionStart = el.selectionEnd = pos;
+            }
+
+            function onKeyDown(e){
+                const allowedKeys = ['Backspace','Delete','ArrowLeft','ArrowRight','Home','End','Tab'];
+                const ctrlCmd = e.ctrlKey || e.metaKey;
+                if(allowedKeys.indexOf(e.key) !== -1) return;
+                if(ctrlCmd) return; // allow ctrl/cmd combos (copy/paste/select)
+                // allow digits, comma, dot
+                if(/^[0-9,\.]$/.test(e.key)) return;
+                // otherwise prevent
+                e.preventDefault();
+            }
+
+            function onInput(e){
+                const el = e.target;
+                const oldValue = el._oldValue || '';
+                const oldPos = typeof el._oldPos === 'number' ? el._oldPos : (el.selectionStart || 0);
+                const raw = el.value || '';
+                const d = digitsOnly(raw);
+                const formatted = formatFromDigits(d);
+                el.value = formatted;
+                try{ setCaretFromDigitCount(el, oldValue, oldPos); } catch(err){}
+            }
+
+            function onFocus(e){
+                const el = e.target; el._oldValue = el.value; el._oldPos = el.selectionStart;
+            }
+
+            function onBeforeInput(e){
+                const el = e.target; el._oldValue = el.value; el._oldPos = el.selectionStart;
+            }
+
+            function bindBRLInputs(){
+                const selectors = ['input[name="valor"]','input[name="meta"]','input[name="aporte_mensal"]'];
+                selectors.forEach(sel => {
+                    document.querySelectorAll(sel).forEach(input => {
+                        // initialize
+                        input.value = formatFromDigits(digitsOnly(input.value));
+                        input.addEventListener('keydown', onKeyDown);
+                        input.addEventListener('beforeinput', onBeforeInput);
+                        input.addEventListener('input', onInput);
+                        input.addEventListener('focus', onFocus);
+                        input.addEventListener('paste', function(ev){
+                            ev.preventDefault();
+                            const text = (ev.clipboardData || window.clipboardData).getData('text') || '';
+                            const d = digitsOnly(text);
+                            this.value = formatFromDigits(d);
+                        });
+                    });
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', bindBRLInputs);
+        })();
+    </script>
 </body>
 </html>
