@@ -42,6 +42,31 @@ def formata_moeda(valor):
     if valor is None: valor = 0.0
     return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
+
+def parse_brl_number(s):
+    """Parse a number string in Brazilian format (e.g. '1.234,56' or '1234,56' or '1234.56') to float.
+    Accepts numeric types as well and returns float. Returns 0.0 for empty/None.
+    """
+    if s is None:
+        return 0.0
+    if isinstance(s, (int, float)):
+        return float(s)
+    try:
+        s = str(s).strip()
+        if s == '':
+            return 0.0
+        # If contains comma as decimal separator, treat as Brazilian format
+        if ',' in s and s.count(',') == 1 and '.' in s:
+            # likely '1.234,56' -> remove dots, replace comma with dot
+            s = s.replace('.', '').replace(',', '.')
+        elif ',' in s and '.' not in s:
+            # '1234,56' -> replace comma with dot
+            s = s.replace(',', '.')
+        # else keep as is (e.g., '1234.56' or '1000')
+        return float(s)
+    except Exception:
+        return 0.0
+
 with app.app_context():
     db.create_all()
 
@@ -158,7 +183,7 @@ def investir():
             user_id=session['user_id'],
             categoria=request.form['categoria'],
             ativo=request.form.get('ativo', '').upper(),
-            valor=float(request.form['valor'])
+            valor=parse_brl_number(request.form['valor'])
         )
         db.session.add(novo_aporte)
         db.session.commit()
@@ -212,20 +237,24 @@ def perfil():
     if request.method == 'POST':
         u.nome = request.form.get('nome')
         if request.form.get('senha'): u.senha = generate_password_hash(request.form.get('senha'))
-        c.meta = float(request.form.get('meta'))
-        c.aporte_mensal_planejado = float(request.form.get('aporte_mensal'))
+        c.meta = parse_brl_number(request.form.get('meta'))
+        c.aporte_mensal_planejado = parse_brl_number(request.form.get('aporte_mensal'))
         data_str = request.form.get('data_alvo')
         if data_str: c.data_alvo = datetime.strptime(data_str, '%Y-%m-%d').date()
         db.session.commit()
         flash('Perfil atualizado!', 'success')
         return redirect(url_for('perfil'))
-    return render_template('perfil.html', user=u, config=c)
+    # provide formatted display strings for template (do not replace numeric inputs)
+    meta_str = formata_moeda(c.meta)
+    aporte_str = formata_moeda(c.aporte_mensal_planejado)
+    data_alvo_str = c.data_alvo.strftime('%d/%m/%Y') if c.data_alvo else ''
+    return render_template('perfil.html', user=u, config=c, meta_str=meta_str, aporte_str=aporte_str, data_alvo_str=data_alvo_str)
 
 @app.route('/simulador', methods=['GET', 'POST'])
 def simulador():
     if request.method == 'POST':
         try:
-            val = float(request.form['valor'])
+            val = parse_brl_number(request.form['valor'])
             p = request.form['perfil']
             dist = {'Conservador': {'Renda Fixa': 0.6, 'FIIs': 0.25, 'Ações': 0.15},
                     'Moderado': {'Renda Fixa': 0.4, 'FIIs': 0.3, 'Ações': 0.3},
