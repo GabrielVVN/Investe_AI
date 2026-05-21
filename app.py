@@ -1,6 +1,5 @@
-# app.py
 import os
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
@@ -37,6 +36,12 @@ class Aporte(db.Model):
     categoria = db.Column(db.String(50), nullable=False)
     ativo = db.Column(db.String(50), nullable=True)
 
+# --- FILTRO PARA MOEDA BRASILEIRA (R$ XX.XXX,XX) ---
+@app.template_filter('brl')
+def formata_moeda(valor):
+    if valor is None: valor = 0.0
+    return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
 with app.app_context():
     db.create_all()
 
@@ -49,7 +54,6 @@ def checar_autenticacao():
 @app.route('/')
 def index():
     user_id = session['user_id']
-    
     config = Configuracao.query.filter_by(user_id=user_id).first()
     if not config:
         config = Configuracao(user_id=user_id)
@@ -57,44 +61,95 @@ def index():
         db.session.commit()
 
     aportes = Aporte.query.filter_by(user_id=user_id).order_by(Aporte.data.desc()).all()
-    
     total_aportado = sum(a.valor for a in aportes)
     saldo_atual = config.saldo_inicial + total_aportado
+
+    # Prepare display-friendly aporte entries (server-side formatted strings)
+    aportes_display = []
+    for a in aportes:
+        aportes_display.append({
+            'id': a.id,
+            'user_id': a.user_id,
+            'valor': a.valor,
+            'valor_str': formata_moeda(a.valor),
+            'data': a.data,
+            'data_str': a.data.strftime('%d/%m/%Y') if hasattr(a.data, 'strftime') else str(a.data),
+            'categoria': a.categoria,
+            'ativo': a.ativo
+        })
     
     distribuicao = {'Ações': 0, 'FIIs': 0, 'Renda Fixa': 0, 'Cripto': 0}
     for a in aportes:
         cat = 'Renda Fixa' if a.categoria == 'Tesouro' else a.categoria
-        if cat in distribuicao:
-            distribuicao[cat] += a.valor
-        else:
-            distribuicao[cat] = a.valor
+        distribuicao[cat] = distribuicao.get(cat, 0) + a.valor
 
+    # --- LÓGICA DO COACH FINANCEIRO ---
     hoje = datetime.now().date()
-    meses_restantes = (config.data_alvo.year - hoje.year) * 12 + (config.data_alvo.month - hoje.month)
-    if meses_restantes <= 0: meses_restantes = 1
-    
     taxa_mensal = (1 + config.rentabilidade_anual) ** (1/12) - 1
-    aporte_necessario = -npf.pmt(taxa_mensal, meses_restantes, -saldo_atual, config.meta)
-    gap_aporte = aporte_necessario - config.aporte_mensal_planejado
+    
+    # Calcular data prevista baseada no aporte atual
+    data_alvo_str = config.data_alvo.strftime('%d/%m/%Y')
+    prazo_str = config.data_alvo.strftime('%m/%Y')
+    aporte_atual_str = formata_moeda(config.aporte_mensal_planejado)
 
-    # MENSAGEM INTELIGENTE DO COACH
-    status = "success"
-    msg_coach = "No Alvo! O seu plano de aportes atual é suficiente para atingir a meta no prazo estabelecido."
-    if gap_aporte > 0:
+    # Calcular aporte necessário para o prazo original
+    meses_restantes_prazo = (config.data_alvo.year - hoje.year) * 12 + (config.data_alvo.month - hoje.month)
+    if meses_restantes_prazo <= 0: meses_restantes_prazo = 1
+    aporte_ideal = -npf.pmt(taxa_mensal, meses_restantes_prazo, -saldo_atual, config.meta)
+
+    try:
+        if saldo_atual >= config.meta:
+            previsao_str = "Meta já atingida!"
+            status = "success"
+            msg_coach = "Parabéns! Sua meta já foi atingida com o saldo atual."
+        elif config.aporte_mensal_planejado > 0:
+            n_meses = npf.nper(taxa_mensal, -config.aporte_mensal_planejado, -saldo_atual, config.meta)
+            if n_meses is None or n_meses != n_meses or n_meses == float('inf') or n_meses <= 0:
+                previsao_str = "Projeção indisponível"
+                status = "warning"
+                msg_coach = (
+                    f"Aporte atual de {aporte_atual_str}/mês não permite projetar a meta. "
+                    f"Para chegar em {prazo_str}, você precisaria investir {formata_moeda(aporte_ideal)}/mês."
+                )
+            else:
+                data_prevista = hoje + timedelta(days=int(n_meses * 30.44))
+                previsao_str = data_prevista.strftime('%d/%m/%Y')
+                if data_prevista <= config.data_alvo:
+                    status = "success"
+                    msg_coach = (
+                        f"Excelente! Mantendo {aporte_atual_str}/mês, você atingirá a meta em {previsao_str}, "
+                        f"antes do prazo ({prazo_str})."
+                    )
+                else:
+                    status = "warning"
+                    msg_coach = (
+                        f"Com {aporte_atual_str}/mês você deve atingir a meta em {previsao_str}, "
+                        f"após o prazo de {prazo_str}. Para cumprir o prazo, aporte {formata_moeda(aporte_ideal)}/mês."
+                    )
+        else:
+            previsao_str = "Indeterminada (Ajuste seu aporte)"
+            status = "warning"
+            msg_coach = (
+                f"Insira um aporte mensal maior que zero para calcular a data prevista. "
+                f"Para atingir em {prazo_str}, você precisa investir {formata_moeda(aporte_ideal)}/mês."
+            )
+    except Exception:
+        previsao_str = "Cálculo indisponível"
         status = "warning"
-        msg_coach = f"Atenção: Para atingir a meta de R$ {config.meta:.2f} até {config.data_alvo.year}, o aporte ideal é R$ {aporte_necessario:.2f}/mês. Como seu plano atual é R$ {config.aporte_mensal_planejado:.2f}, tente ajustar o orçamento ou revise sua meta no Perfil!"
+        msg_coach = (
+            "O coach não conseguiu gerar a projeção. Verifique seus valores e tente novamente."
+        )
 
     progresso_percentual = min((saldo_atual / config.meta) * 100, 100) if config.meta > 0 else 0
+    saldo_atual_str = formata_moeda(saldo_atual)
+    meta_str = formata_moeda(config.meta)
 
     return render_template('index.html', 
-                           config=config,
-                           aportes=aportes, 
-                           saldo_atual=saldo_atual, 
-                           meses_restantes=meses_restantes,
-                           progresso_percentual=progresso_percentual,
-                           status=status,
-                           msg_coach=msg_coach,
-                           distribuicao=distribuicao)
+                           config=config, aportes=aportes_display, saldo_atual=saldo_atual, 
+                           saldo_atual_str=saldo_atual_str, meta_str=meta_str,
+                           aporte_atual_str=aporte_atual_str,
+                           progresso_percentual=progresso_percentual, status=status, 
+                           msg_coach=msg_coach, previsao_str=previsao_str, distribuicao=distribuicao)
 
 @app.route('/investir', methods=['GET', 'POST'])
 def investir():
@@ -107,10 +162,8 @@ def investir():
         )
         db.session.add(novo_aporte)
         db.session.commit()
-        
-        flash(f"Investimento de R$ {novo_aporte.valor:.2f} registado com sucesso!", 'success')
+        flash(f"Investimento de {formata_moeda(novo_aporte.valor)} registrado!", 'success')
         return redirect(url_for('index'))
-        
     return render_template('investir.html')
 
 @app.route('/deletar_aporte/<int:id>', methods=['POST'])
@@ -118,26 +171,21 @@ def deletar_aporte(id):
     aporte = Aporte.query.filter_by(id=id, user_id=session['user_id']).first_or_404()
     db.session.delete(aporte)
     db.session.commit()
-    flash('Investimento removido do seu histórico.', 'success')
+    flash('Investimento removido.', 'success')
     return redirect(url_for('index'))
 
 @app.route('/cadastro', methods=['GET', 'POST'])
 def cadastro():
     if 'user_id' in session: return redirect(url_for('index'))
     if request.method == 'POST':
-        username = request.form['username']
-        if Usuario.query.filter_by(username=username).first():
-            flash('Utilizador já existe.', 'error')
+        if Usuario.query.filter_by(username=request.form['username']).first():
+            flash('Usuário já existe.', 'error')
             return redirect(url_for('cadastro'))
-            
-        novo_usuario = Usuario(
-            nome=request.form['nome'],
-            username=username,
-            senha=generate_password_hash(request.form['senha'])
-        )
-        db.session.add(novo_usuario)
+        novo = Usuario(nome=request.form['nome'], username=request.form['username'], 
+                       senha=generate_password_hash(request.form['senha']))
+        db.session.add(novo)
         db.session.commit()
-        flash('Conta criada! Faça o seu login.', 'success')
+        flash('Conta criada!', 'success')
         return redirect(url_for('login'))
     return render_template('cadastro.html')
 
@@ -145,15 +193,11 @@ def cadastro():
 def login():
     if 'user_id' in session: return redirect(url_for('index'))
     if request.method == 'POST':
-        usuario = Usuario.query.filter_by(username=request.form['username']).first()
-        if usuario and check_password_hash(usuario.senha, request.form['senha']):
-            session['user_id'] = usuario.id
-            session['username'] = usuario.username
-            session['nome'] = usuario.nome
+        u = Usuario.query.filter_by(username=request.form['username']).first()
+        if u and check_password_hash(u.senha, request.form['senha']):
+            session.update({'user_id': u.id, 'username': u.username, 'nome': u.nome})
             return redirect(url_for('index'))
-            
-        flash('Utilizador ou senha incorretos.', 'error')
-        return redirect(url_for('login'))
+        flash('Credenciais inválidas.', 'error')
     return render_template('login.html')
 
 @app.route('/logout')
@@ -161,55 +205,43 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# ROTA DO PERFIL ATUALIZADA COM DADOS FINANCEIROS
 @app.route('/perfil', methods=['GET', 'POST'])
 def perfil():
-    usuario = Usuario.query.get(session['user_id'])
-    config = Configuracao.query.filter_by(user_id=session['user_id']).first()
-    
+    u = Usuario.query.get(session['user_id'])
+    c = Configuracao.query.filter_by(user_id=session['user_id']).first()
     if request.method == 'POST':
-        # Atualiza Conta
-        usuario.nome = request.form.get('nome')
-        session['nome'] = usuario.nome
-        nova_senha = request.form.get('senha')
-        if nova_senha: 
-            usuario.senha = generate_password_hash(nova_senha)
-            
-        # Atualiza Realidade Financeira
-        config.meta = float(request.form.get('meta', config.meta))
-        config.aporte_mensal_planejado = float(request.form.get('aporte_mensal', config.aporte_mensal_planejado))
-        
+        u.nome = request.form.get('nome')
+        if request.form.get('senha'): u.senha = generate_password_hash(request.form.get('senha'))
+        c.meta = float(request.form.get('meta'))
+        c.aporte_mensal_planejado = float(request.form.get('aporte_mensal'))
         data_str = request.form.get('data_alvo')
-        if data_str:
-            config.data_alvo = datetime.strptime(data_str, '%Y-%m-%d').date()
-            
+        if data_str: c.data_alvo = datetime.strptime(data_str, '%Y-%m-%d').date()
         db.session.commit()
-        flash('Perfil e metas atualizados com sucesso!', 'success')
+        flash('Perfil atualizado!', 'success')
         return redirect(url_for('perfil'))
-        
-    return render_template('perfil.html', user=usuario, config=config)
+    return render_template('perfil.html', user=u, config=c)
 
 @app.route('/simulador', methods=['GET', 'POST'])
 def simulador():
     if request.method == 'POST':
         try:
-            valor = float(request.form['valor'])
-            perfil = request.form['perfil']
-            if perfil == 'Conservador': distribuicao = {'Renda Fixa': 0.60, 'FIIs': 0.25, 'Ações': 0.15}
-            elif perfil == 'Moderado': distribuicao = {'Renda Fixa': 0.40, 'FIIs': 0.30, 'Ações': 0.30}
-            elif perfil == 'Agressivo': distribuicao = {'Renda Fixa': 0.20, 'FIIs': 0.30, 'Ações': 0.50}
-
-            valores_reais = {k: v * valor for k, v in distribuicao.items()}
-            simulacao = {
-                'data': datetime.now().strftime("%d/%m/%Y"),
-                'valor_investido': valor,
-                'perfil': perfil,
-                'distribuicao_percentual': distribuicao,
-                'valores_reais': valores_reais
+            val = float(request.form['valor'])
+            p = request.form['perfil']
+            dist = {'Conservador': {'Renda Fixa': 0.6, 'FIIs': 0.25, 'Ações': 0.15},
+                    'Moderado': {'Renda Fixa': 0.4, 'FIIs': 0.3, 'Ações': 0.3},
+                    'Agressivo': {'Renda Fixa': 0.2, 'FIIs': 0.3, 'Ações': 0.5}}[p]
+            sim = {
+                'data': date.today().strftime("%d/%m/%Y"),
+                'valor_investido': val,
+                'perfil': p,
+                'distribuicao_percentual': dist,
+                'valores_reais': {k: v * val for k, v in dist.items()}
             }
-            return render_template('resultado.html', sim=simulacao)
-        except ValueError:
-            return redirect(url_for('simulador'))
+            # Server-side formatted strings for display
+            sim['valor_investido_str'] = formata_moeda(val)
+            sim['valores_reais_str'] = {k: formata_moeda(v * val) for k, v in dist.items()}
+            return render_template('resultado.html', sim=sim)
+        except: return redirect(url_for('simulador'))
     return render_template('simulador.html')
 
 @app.route('/aprender')
